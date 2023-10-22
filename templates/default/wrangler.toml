@@ -1,0 +1,6 @@
+name = "hello"
+main = "result/shim.mjs"
+compatibility_date = "2023-10-22"
+
+[build]
+command = "nix build"
