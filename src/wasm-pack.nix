@@ -36,14 +36,14 @@ in
         or ''
           HOME=$(mktemp -d)
 
-          wasm-pack build \
+          wasm-pack build ${if args.workspace then args.pname else "./"} \
             --no-typescript \
             --target bundler \
             --out-dir build \
             --out-name index \
             --release
 
-          substituteInPlace build/index_bg.js \
+          substituteInPlace ${if args.workspace then args.pname else "."}/build/index_bg.js \
             --replace "${wasmImport}" "${wasmImportReplacement}"
         '';
 
@@ -54,9 +54,9 @@ in
         or ''
           mkdir $out
 
-          mv build/index_bg.js $out
-          mv build/index_bg.wasm $out/index.wasm
+          mv ${if args.workspace then args.pname else "."}/build/index_bg.js $out
+          mv ${if args.workspace then args.pname else "."}/build/index_bg.wasm $out/index.wasm
 
-          [ -f build/snippets ] && mv build/snippets $out
+          [ -f build/snippets ] && mv ${if args.workspace then args.pname else "."}/build/snippets $out
         '';
     })
