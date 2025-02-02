@@ -2,6 +2,7 @@
   binaryen,
   callPackage,
   fetchFromGitHub,
+  lib,
   wasm-pack,
   craneLib,
   ...
@@ -17,6 +18,8 @@
   filteredArgs = builtins.removeAttrs args [
     "craneLib"
   ];
+
+  extraWasmPackArgs = args.extraWasmPackArgs or [];
 in
   (args.craneLib or craneLib).mkCargoDerivation (filteredArgs
     // {
@@ -41,7 +44,7 @@ in
             --target bundler \
             --out-dir build \
             --out-name index \
-            --release
+            --release ${lib.escapeShellArgs extraWasmPackArgs}
 
           substituteInPlace build/index_bg.js \
             --replace "${wasmImport}" "${wasmImportReplacement}"
