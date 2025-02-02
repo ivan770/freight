@@ -11,6 +11,12 @@
       type = "github";
       owner = "ipetkov";
       repo = "crane";
+    };
+
+    fenix = {
+      type = "github";
+      owner = "nix-community";
+      repo = "fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -41,6 +47,13 @@
         pkgs = import nixpkgs {
           inherit system;
         };
+
+        rustToolchain = with fenix.packages.${system};
+          combine [
+            stable.rustc
+            stable.cargo
+            targets.wasm32-unknown-unknown.stable.rust-std
+          ];
       in {
         lib.mkWorker = pkgs.lib.makeOverridable (
           {esbuildPnameSuffix ? "-bundle", ...} @ args:
@@ -52,14 +65,7 @@
 
               src =
                 (pkgs.callPackage ./src/wasm-pack.nix {
-                  craneLib =
-                    crane.lib.${system}.overrideToolchain
-                    (with fenix.packages.${system};
-                      combine [
-                        stable.rustc
-                        stable.cargo
-                        targets.wasm32-unknown-unknown.stable.rust-std
-                      ]);
+                  craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
                 })
                 args;
             }
