@@ -9,17 +9,14 @@
 }: args: let
   wasm-bindgen-cli = (callPackage ./wasm-bindgen.nix {}) args;
 
-  # https://github.com/cloudflare/workers-rs/blob/fea2e8e14d8807d422bde6bfab837914a0019e8d/worker-build/src/main.rs#L19-L24
-  wasmImport = builtins.readFile ./snippets/import.js;
-
-  # https://github.com/cloudflare/workers-rs/blob/fea2e8e14d8807d422bde6bfab837914a0019e8d/worker-build/src/main.rs#L26-L32
-  wasmImportReplacement = builtins.readFile ./snippets/importReplacement.js;
-
   filteredArgs = builtins.removeAttrs args [
     "craneLib"
   ];
 
+  wasmPackPath = args.wasmPackPath or ".";
   extraWasmPackArgs = args.extraWasmPackArgs or [];
+
+  buildDir = "${wasmPackPath}/build";
 in
   (args.craneLib or craneLib).mkCargoDerivation (filteredArgs
     // {
@@ -44,10 +41,8 @@ in
             --target bundler \
             --out-dir build \
             --out-name index \
-            --release ${lib.escapeShellArgs extraWasmPackArgs}
-
-          substituteInPlace build/index_bg.js \
-            --replace "${wasmImport}" "${wasmImportReplacement}"
+            --release \
+            ${wasmPackPath} ${lib.escapeShellArgs extraWasmPackArgs}
         '';
 
       doInstallCargoArtifacts = args.doInstallCargoArtifacts or false;
@@ -57,9 +52,9 @@ in
         or ''
           mkdir $out
 
-          mv build/index_bg.js $out
-          mv build/index_bg.wasm $out/index.wasm
+          mv ${buildDir}/index_bg.js $out
+          mv ${buildDir}/index_bg.wasm $out/index.wasm
 
-          [ -f build/snippets ] && mv build/snippets $out
+          [ -f ${buildDir}/snippets ] && mv ${buildDir}/snippets $out
         '';
     })

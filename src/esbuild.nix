@@ -4,10 +4,10 @@
   src,
   workers-rs,
   esbuild,
-  stdenv,
+  stdenvNoCC,
   ...
 }:
-stdenv.mkDerivation {
+stdenvNoCC.mkDerivation {
   inherit pname version src;
 
   nativeBuildInputs = [
@@ -15,15 +15,19 @@ stdenv.mkDerivation {
   ];
 
   postUnpack = ''
-    cp ${workers-rs}/worker-build/src/js/glue.js $sourceRoot
     cp ${workers-rs}/worker-build/src/js/shim.js $sourceRoot
   '';
 
+  # https://github.com/cloudflare/workers-rs/blob/38af58acc4e54b29c73336c1720188f3c3e86cc4/worker-build/src/main.rs#L51-L55
   buildPhase = ''
+    substituteInPlace shim.js \
+      --replace-fail "\$WAIT_UNTIL_RESPONSE" ""
+
     esbuild --bundle \
       --format=esm \
       --external:./index.wasm \
       --external:cloudflare:sockets \
+      --external:cloudflare:workers \
       --outfile=shim.mjs \
       --minify \
       ./shim.js
